@@ -15,7 +15,7 @@ npm run start
 
 ## Contributing
 1. Make an issue on the `Issues` tab of the Github repo
-2. Make a branch or a fork of the repo
+2. Make a branch or a fork of the repo (from `staging`)
 3. Make your necessary changes
 4. Open a pull request with your changes
 5. Add a reviewer to your pull request
