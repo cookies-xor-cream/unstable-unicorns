@@ -9,7 +9,7 @@
   "authentication": {
     "entity": "user",
     "service": "users",
-    "secret": "Ej0XhakSOO92QbeyLKDUqsZPQks=",
+    "secret": "1Ug2besEcb6enZQWPKTm+zdoDsc=",
     "authStrategies": [
       "jwt",
       "local"
@@ -18,7 +18,7 @@
       "header": {
         "typ": "access"
       },
-      "audience": "http://localhost:3030",
+      "audience": "https://yourdomain.com",
       "issuer": "feathers",
       "algorithm": "HS256",
       "expiresIn": "1d"
@@ -27,5 +27,5 @@
       "usernameField": "email",
       "passwordField": "password"
     }
-  },
+  }
 }

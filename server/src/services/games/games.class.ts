@@ -1,4 +1,6 @@
-// This is the interface for the message data
+import { Service, MemoryServiceOptions } from 'feathers-memory';
+import { Application } from '../../declarations';
+
 interface Message {
     id: number;
     text: string;
@@ -14,9 +16,14 @@ interface GameState {
 
 // A messages service that allows to create new
 // and return all existing messages
-class GameService {
+class Games extends Service {
     messages: Message[] = [];
     state: GameState = {};
+
+    //eslint-disable-next-line @typescript-eslint/no-unused-vars
+    constructor(options: Partial<MemoryServiceOptions>, app: Application) {
+        super(options);
+    }
 
     async find () {
         // Just return all our messages
@@ -45,4 +52,4 @@ class GameService {
     }
 }
 
-export default GameService;
+export default Games;

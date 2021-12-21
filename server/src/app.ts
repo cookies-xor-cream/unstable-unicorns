@@ -1,94 +1,81 @@
+import path from 'path';
+import favicon from 'serve-favicon';
+import compress from 'compression';
+import helmet from 'helmet';
+import cors from 'cors';
+
 import feathers from '@feathersjs/feathers';
-import '@feathersjs/transport-commons';
+import configuration from '@feathersjs/configuration';
 import express from '@feathersjs/express';
 import socketio from '@feathersjs/socketio';
 
-import authentication from 'feathers-authentication';
-import jwt from  '@feathersjs/authentication-jwt';
+import { Application } from './declarations';
+import logger from './logger';
+import middleware from './middleware';
+import services from './services';
+import appHooks from './app.hooks';
+import channels from './channels';
+import { HookContext as FeathersHookContext } from '@feathersjs/feathers';
+import authentication from './authentication';
+// Don't remove this comment. It's needed to format import lines nicely.
 
-import auth from './auth';
+const app: Application = express(feathers());
+export type HookContext<T = any> = { app: Application } & FeathersHookContext<T>;
 
-import GameService from './services/game';
+// Load app configuration
+app.configure(configuration());
+// Enable security, CORS, compression, favicon and body parsing
+app.use(helmet({
+  contentSecurityPolicy: false
+}));
+app.use(cors());
+app.use(compress());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(favicon(path.join(app.get('public'), 'favicon.ico')));
+// Host the public folder
+app.use('/', express.static(app.get('public')));
 
-// Creates an ExpressJS compatible Feathers application
-const app = express(feathers());
+// Set up Plugins and providers
+app.configure(express.rest());
+app.configure(socketio());
 
-// auth settings
-app.set('authentication', {
-	"entity": null,
-	"service": null,
-	"secret": "Ej0XhakSOO92QbeyLKDUqsZPQks=",
-	"authStrategies": [
-		"jwt",
-		"local"
-	],
-	"jwtOptions": {
-		"header": {
-			"typ": "access"
-		},
-		"secret": "Ej0XhakSOO92QbeyLKDUqsZPQks=",
-		"audience": "http://localhost:3030",
-		"issuer": "feathers",
-		"algorithm": "HS256",
-		"expiresIn": "1d"
-	},
-	"local": {
-		"usernameField": "email",
-		"passwordField": "password"
-	}
-});
+// Configure other middleware (see `middleware/index.ts`)
+app.configure(middleware);
+// Set up our services (see `services/index.ts`)
+app.configure(services);
+// Set up our authentication
+app.configure(authentication)
+// Set up event channels (see channels.ts)
+app.configure(channels);
 
-// Setup authentication
-app.configure(authentication(app.get('authentication')));
-app.configure(jwt());
- 
-// Setup a hook to only allow valid JWTs to authenticate
-// and get new JWT access tokens
-app.service('authentication').hooks({
-  before: {
-    create: [
-      authentication.hooks.authenticate(['jwt'])
-    ]
+// Configure a middleware for 404s and the error handler
+app.use(express.notFound());
+app.use(express.errorHandler({ logger } as any));
+
+app.on('listen', () =>
+  console.log('listening on localhost:3030')
+);
+
+app.use('/services', {
+  async find () {
+    const services = Object.keys(app.services);
+
+    return { services };
   }
 });
 
-// Express middleware to parse HTTP JSON bodies
-app.use(express.json());
-// Express middleware to parse URL-encoded params
-app.use(express.urlencoded({ extended: true }));
-// Express middleware to to host static files from the current folder
-app.use(express.static(__dirname));
-// Add REST API support
-app.configure(express.rest());
-// Configure Socket.io real-time APIs
-app.configure(socketio());
-app.configure(auth)
-// Register our messages service
-app.use('/game', new GameService());
-// Express middleware with a nicer error handler
-app.use(express.errorHandler());
+// app.use(function(req, res, next) {
+//   res.header("Access-Control-Allow-Origin", "*");
+//   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+//   next();
+// });
 
-console.log(__dirname);
-console.log(app.get('authentication'));
+// app.service('users').find()
+//   .then((e: any) => console.log("???", e));
 
-app.get('authentication')
+  // console.log(app.services);
 
-// Add any new real-time connection to the `players` channel
-app.on('connection', connection => {
-	console.log("----------------------------");
-	console.log(connection);
-	app.channel('players').join(connection)
-});
-// Publish all events to the `players` channel
-app.publish(data => app.channel('players'));
+app.hooks(appHooks);
 
-// Start the server
-app.listen(3030).on('listening', () =>
-	console.log('Feathers server listening on localhost:3030')
-);
-
-// For good measure let's create a message
-// So our API doesn't look so empty
-app.service('game').create({
-	text: 'Hello world from the server'
-});
+export default app;
