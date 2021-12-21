@@ -3,39 +3,54 @@ import '@feathersjs/transport-commons';
 import express from '@feathersjs/express';
 import socketio from '@feathersjs/socketio';
 
-// This is the interface for the message data
-interface Message {
-  id: number;
-  text: string;
-}
+import authentication from 'feathers-authentication';
+import jwt from  '@feathersjs/authentication-jwt';
 
-// A messages service that allows to create new
-// and return all existing messages
-class MessageService {
-	messages: Message[] = [];
+import auth from './auth';
 
-	async find () {
-		// Just return all our messages
-		return this.messages;
-	}
-
-	async create (data: Pick<Message, 'text'>) {
-		// The new message is the data text with a unique identifier added
-		// using the messages length since it changes whenever we add one
-		const message: Message = {
-			id: this.messages.length,
-			text: data.text
-		};
-
-		// Add new message to the list
-		this.messages.push(message);
-
-		return message;
-	}
-}
+import GameService from './services/game';
 
 // Creates an ExpressJS compatible Feathers application
 const app = express(feathers());
+
+// auth settings
+app.set('authentication', {
+	"entity": null,
+	"service": null,
+	"secret": "Ej0XhakSOO92QbeyLKDUqsZPQks=",
+	"authStrategies": [
+		"jwt",
+		"local"
+	],
+	"jwtOptions": {
+		"header": {
+			"typ": "access"
+		},
+		"secret": "Ej0XhakSOO92QbeyLKDUqsZPQks=",
+		"audience": "http://localhost:3030",
+		"issuer": "feathers",
+		"algorithm": "HS256",
+		"expiresIn": "1d"
+	},
+	"local": {
+		"usernameField": "email",
+		"passwordField": "password"
+	}
+});
+
+// Setup authentication
+app.configure(authentication(app.get('authentication')));
+app.configure(jwt());
+ 
+// Setup a hook to only allow valid JWTs to authenticate
+// and get new JWT access tokens
+app.service('authentication').hooks({
+  before: {
+    create: [
+      authentication.hooks.authenticate(['jwt'])
+    ]
+  }
+});
 
 // Express middleware to parse HTTP JSON bodies
 app.use(express.json());
@@ -47,17 +62,25 @@ app.use(express.static(__dirname));
 app.configure(express.rest());
 // Configure Socket.io real-time APIs
 app.configure(socketio());
+app.configure(auth)
 // Register our messages service
-app.use('/messages', new MessageService());
+app.use('/game', new GameService());
 // Express middleware with a nicer error handler
 app.use(express.errorHandler());
 
-// Add any new real-time connection to the `everybody` channel
-app.on('connection', connection =>
-	app.channel('everybody').join(connection)
-);
-// Publish all events to the `everybody` channel
-app.publish(data => app.channel('everybody'));
+console.log(__dirname);
+console.log(app.get('authentication'));
+
+app.get('authentication')
+
+// Add any new real-time connection to the `players` channel
+app.on('connection', connection => {
+	console.log("----------------------------");
+	console.log(connection);
+	app.channel('players').join(connection)
+});
+// Publish all events to the `players` channel
+app.publish(data => app.channel('players'));
 
 // Start the server
 app.listen(3030).on('listening', () =>
@@ -66,6 +89,6 @@ app.listen(3030).on('listening', () =>
 
 // For good measure let's create a message
 // So our API doesn't look so empty
-app.service('messages').create({
+app.service('game').create({
 	text: 'Hello world from the server'
 });
