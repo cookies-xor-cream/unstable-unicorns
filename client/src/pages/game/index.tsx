@@ -3,34 +3,34 @@ import { useEffectOnce } from 'react-use';
 
 import './index.css';
 
-import feathers from "@feathersjs/client";
-import socketio from '@feathersjs/socketio-client';
-import io from 'socket.io-client';
-
-import serverUrl from '../../lib/globals';
-
-const client = feathers();
-const socket = io(serverUrl);
-client.configure(socketio(socket));
-
-client.configure(feathers.authentication({
-  storage: window.localStorage
-}));
+import client from '../../lib/feathers';
 
 const Game = () => {
   const sendMessage = () => {
-    client.service('game').create({
+    client.service('games').create({
       text: "test123"
     });
     console.log("test123");
   };
 
+  const login = () => {
+    const _client: any = client
+    _client.authenticate({
+      strategy: 'local',
+      email: 'test@test.com',
+      password: 'password',
+    }).then((e: any) => console.log("logged in", e))
+      .catch((e: any) => console.log("rip", e));
+
+
+  }
+
   const auth = () => {
-    // client.authenticate({
-    //   strategy: 'local',
-    //   email: 'hello@feathersjs.com',
-    //   password: 'supersecret'
-    // });
+    client.service('users')
+      .create({
+        email: 'test@test.com',
+        password: 'password',
+      }).then(login);
   }
 
   return (

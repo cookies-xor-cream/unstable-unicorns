@@ -2,6 +2,7 @@
   "name": "my-app",
   "version": "0.1.0",
   "private": true,
+  "proxy": "http://localhost:3030/",
   "dependencies": {
     "@feathersjs/client": "^4.5.11",
     "@feathersjs/socketio-client": "^4.5.11",
