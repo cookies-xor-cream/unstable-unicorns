@@ -16,16 +16,16 @@ const NavBar = () => {
             variant="dark"
             expand="lg"
         >
-        <Container>
-            <Navbar.Brand href="/">Unstable Unicorns</Navbar.Brand>
-            <Navbar.Toggle aria-controls="basic-navbar-nav" />
-            <Navbar.Collapse id="basic-navbar-nav">
-                <Nav className="me-auto">
-                    <Nav.Link href="/lobbies#lobbies">Lobbies</Nav.Link>
-                    <Nav.Link href="/rules#rules">Rules</Nav.Link>
-                </Nav>
-            </Navbar.Collapse>
-        </Container>
+            <Container>
+                <Navbar.Brand href="/">Unstable Unicorns</Navbar.Brand>
+                <Navbar.Toggle aria-controls="basic-navbar-nav" />
+                <Navbar.Collapse id="basic-navbar-nav">
+                    <Nav className="me-auto">
+                        <Nav.Link href="/lobbies#lobbies">Lobbies</Nav.Link>
+                        <Nav.Link href="/rules#rules">Rules</Nav.Link>
+                    </Nav>
+                </Navbar.Collapse>
+            </Container>
         </Navbar>
     );
 };
